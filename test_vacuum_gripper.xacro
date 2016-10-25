@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="Gecko_2">
+
+  <!-- parameters -->
+  <xacro:property name="sin45" value="0.707106781"/>
+
+  <xacro:property name="body_cutout_x" value="0.040894"/>
+  <xacro:property name="body_length_x" value="0.17145"/>
+  <xacro:property name="body_length_y" value="0.1397"/>
+  <xacro:property name="body_length_z" value="0.0381"/>
+  <xacro:property name="bracket_length_z" value="0.003302"/>
+  <xacro:property name="bracket_hole_to_end" value="0.01397"/>
+  <xacro:property name="coxa_length" value="0.06858"/>
+  <xacro:property name="femur_length" value="0.076454"/>
+  <xacro:property name="tibia_length" value="0.171704"/>
+  <xacro:property name="tarsus_length" value="0.0508"/>
+
+  <xacro:property name="mass_body"   value="4.5"/>
+  <xacro:property name="mass_femur"  value="0.078221043"/>
+  <xacro:property name="mass_tibia"  value="0.1756725"/>
+  <xacro:property name="mass_tarsus" value="0.0519741"/>
+  <xacro:property name="mass_foot"   value="0.45"/>
+
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+    	<robotNamespace>/Gecko_2</robotNamespace>
+    </plugin>
+  </gazebo>
+
+
+  <!-- Base Link -->
+  <link name="base_link"/>
+
+  
+  <!-- Body Link -->
+  <xacro:property name="body_Ixx" value="${( (1/12.0)*(mass_body)*(body_length_z*body_length_z + body_length_y*body_length_y) )}"/>
+  <xacro:property name="body_Izz" value="${( (1/12.0)*(mass_body)*(body_length_x*body_length_x + body_length_y*body_length_y) )}"/>
+  <xacro:property name="body_Iyy" value="${( (1/12.0)*(mass_body)*(body_length_x*body_length_x + body_length_z*body_length_z) )}"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="body_link"/>
+    <origin xyz="0.0 0.0 ${0.064+0.5}" rpy="0.0 0.0 0.0"/>
+  </joint>
+  <link name="body_link">
+    <visual>
+      <origin xyz="${-( (body_length_z/2.0)*sin45 + (coxa_length)*sin45 - (0.040894/2.0) + (body_length_x/2.0) )} ${( (body_length_z/2.0)*sin45 + (coxa_length)*sin45 - (0.040894/2.0) + (body_length_y/2.0) )} ${-body_length_z/2.0}" rpy="${pi/2.0} 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://gecko_2_description/meshes/body.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="${-( (body_length_z/2.0)*sin45 + (coxa_length)*sin45 - (0.040894/2.0) + (body_length_x/2.0) )} ${( (body_length_z/2.0)*sin45 + (coxa_length)*sin45 - (0.040894/2.0) + (body_length_y/2.0) )} ${-body_length_z/2.0}" rpy="${pi/2.0} 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://gecko_2_description/meshes/body.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1"/>
+      </material>
+    </collision>
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <mass value="${mass_body}"/>
+      <inertia ixx="${body_Ixx}" ixy="0.0"  ixz="0.0" iyy="${body_Iyy}" iyz="0.0" izz="${body_Izz}" />
+    </inertial>
+  </link>
+  <gazebo reference="body_link">
+    <material>Gazebo/DarkGrey</material>
+  </gazebo>
+
+
+  <joint name="gripper_joint" type="revolute">
+    <parent link="body_link" />
+    <child link="vacuum_foot_RR" />
+    <origin xyz="0 0 ${-(body_length_z/2.0)-(0.0001/2.0)}" rpy="0 0 0" />
+    <limit effort="30" velocity="1.0" lower="0" upper="0" />
+  </joint>
+  <link name="vacuum_foot_RR">
+    <gravity>0</gravity>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.05715" length="0.0001"/>
+      </geometry>
+      <material name="transparent">
+        <color rgba="0 0 0 0"/>
+      </material>
+    </visual>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.000000 0.000000 0.000000"/>
+      <mass value="0.0001"/>
+      <inertia ixx="1e-08" ixy="0" ixz="0" iyy="1e-08" iyz="0" izz="1e-08"/>
+    </inertial>
+  </link>
+  <gazebo>
+    <plugin name='gazebo_ros_vacuum_gripper' filename='libgazebo_ros_vacuum_gripper.so'>
+      <robotNamespace>/Gecko_2/vacuum_gripper</robotNamespace>
+      <bodyName>vacuum_foot_RR</bodyName>
+      <topicName>grasping</topicName>
+    </plugin>
+  </gazebo>
+
+</robot>
